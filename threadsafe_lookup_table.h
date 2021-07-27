@@ -9,6 +9,7 @@
 #include <list>
 #include <shared_mutex>
 #include <vector>
+#include <map>
 
 template<typename Key, typename Value, typename Hash=std::hash<Key> >
 class threadsafe_lookup_table {
@@ -19,7 +20,7 @@ private: // member class
         using bucket_data = std::list<bucket_value>;
         using bucket_iterator = typename bucket_data::iterator;
         using bucket_const_iterator = typename bucket_data::const_iterator;
-    private:
+    public:
         bucket_data data;
         mutable std::shared_mutex mutex; // C++17
     private:
@@ -89,6 +90,21 @@ public:
 
     void remove_mapping(Key const &key) {
         get_bucket(key).remove_mapping(key);
+    }
+
+    std::map<Key, Value> get_map() const {
+        std::vector<std::unique_lock<std::shared_mutex>> locks;
+        for (unsigned i = 0; i < buckets.size(); ++i) {
+            locks.push_back(std::unique_lock<std::shared_mutex>(buckets[i]->mutex));
+        }
+        std::map<Key, Value> res;
+        for (unsigned i = 0; i < buckets.size(); ++i) {
+            for (auto it = buckets[i]->data.cbegin(); it != buckets[i]->data.cend();
+                 ++it) {
+                res.insert(*it);
+            }
+        }
+        return res;
     }
 };
 
