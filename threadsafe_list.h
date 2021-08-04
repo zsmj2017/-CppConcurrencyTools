@@ -22,7 +22,7 @@ private:
 public:
     threadsafe_list() = default;
 
-    ~threadsafe_list() { remove_if([](node const &) { return true; }); }
+    ~threadsafe_list() { remove_if([](const T& ) { return true; }); }
 
     threadsafe_list(threadsafe_list const &other) = delete;
 
